@@ -21,13 +21,20 @@ async def read_contacts(skip: int = 0,
 @router.get("/search", response_model=List[ContactResponse])
 async def search_contacts(skip: int = 0,
                         limit: int = 100,
-                        firstname: str = Query(None, description="Contact firsname"),
+                        firstname: str = Query(None, description="Contact name"),
                         lastname:  str = Query(None, description="Contact lastname"),
                         email:  str = Query(None, description="Contact email"),
                         db: Session = Depends(get_db)):
     contacts = await repository_contacts.search_contacts(
         skip, limit, firstname, lastname, email, db)
     
+    return contacts
+
+@router.get("/birthdays", response_model=List[ContactResponse])
+async def upcoming_birthdays(skip: int = 0,
+                        limit: int = 100,
+                        db: Session = Depends(get_db)):
+    contacts = await repository_contacts.get_upcoming_birthdays(skip, limit, db)
     return contacts
 
 @router.get("/{contact_id}", response_model=ContactResponse)

@@ -3,6 +3,8 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from datetime import date, timedelta
+
 from src.database.models import Contact
 from src.schemas import ContactModel
 
@@ -67,3 +69,15 @@ async def search_contacts(skip: int,
         raise HTTPException(status_code=400, detail="Search criteria are not specified")
 
     return db.query(Contact).filter(*filters).offset(skip).limit(limit).all()
+
+async def get_upcoming_birthdays(skip: int,
+                       limit: int,
+                       db: Session) -> List[Contact]:
+    
+    today = date.today()
+    seven_days_later = today + timedelta(days=7)
+
+    contacts = db.query(Contact).filter(
+        Contact.birthday.between(today, seven_days_later)
+    ).offset(skip).limit(limit).all()
+    return contacts
