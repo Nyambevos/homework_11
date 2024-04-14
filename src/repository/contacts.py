@@ -1,12 +1,15 @@
 from typing import List
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from src.database.models import Contact
 from src.schemas import ContactModel
 
 
-async def get_contacts(skip: int, limit: int, db: Session) -> List[Contact]:
+async def get_contacts(skip: int,
+                       limit: int,
+                       db: Session) -> List[Contact]:
     return db.query(Contact).offset(skip).limit(limit).all()
 
 
@@ -45,3 +48,22 @@ async def remove_contact(contact_id: int, db: Session)  -> Contact | None:
         db.delete(contact)
         db.commit()
     return contact
+
+async def search_contacts(skip: int,
+                       limit: int,
+                       firstname: str | None,
+                       lastname: str | None,
+                       email: str | None,
+                       db: Session) -> List[Contact]:
+    filters = []
+    if firstname:
+        filters.append(Contact.firstname.ilike(f"%{firstname}%"))
+    if lastname:
+        filters.append(Contact.lastname.ilike(f"%{lastname}%"))
+    if email:
+        filters.append(Contact.email.ilike(f"%{email}%"))
+
+    if not filters:
+        raise HTTPException(status_code=400, detail="Search criteria are not specified")
+
+    return db.query(Contact).filter(*filters).offset(skip).limit(limit).all()
